@@ -58,6 +58,11 @@ type CreateMagicTransitGRETunnelsRequest struct {
 	GRETunnels []MagicTransitGRETunnel `json:"gre_tunnels"`
 }
 
+// UpdateMagicTransitGRETunnelsRequest is an array of GRE tunnels to update.
+type UpdateMagicTransitGRETunnelsRequest struct {
+	GRETunnels []MagicTransitGRETunnel `json:"gre_tunnels"`
+}
+
 // UpdateMagicTransitGRETunnelResponse contains a response after updating a GRE Tunnel.
 type UpdateMagicTransitGRETunnelResponse struct {
 	Response
@@ -154,6 +159,27 @@ func (api *API) UpdateMagicTransitGRETunnel(ctx context.Context, accountID strin
 	}
 
 	return result.Result.ModifiedGRETunnel, nil
+}
+
+// UpdateMagicTransitGRETunnel updates a GRE tunnel.
+//
+// API reference: https://api.cloudflare.com/#magic-gre-tunnels-update-multiple-gre-tunnels
+func (api *API) UpdateMagicTransitGRETunnels(ctx context.Context, accountID string, tunnels []MagicTransitGRETunnel) ([]MagicTransitGRETunnel, error) {
+	uri := fmt.Sprintf("/accounts/%s/magic/gre_tunnels", accountID)
+	res, err := api.makeRequestContext(ctx, http.MethodPut, uri, UpdateMagicTransitGRETunnelsRequest{
+		GRETunnels: tunnels,
+	})
+
+	if err != nil {
+		return []MagicTransitGRETunnel{}, err
+	}
+
+	result := ListMagicTransitGRETunnelsResponse{}
+	if err := json.Unmarshal(res, &result); err != nil {
+		return []MagicTransitGRETunnel{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
+	}
+
+	return result.Result.GRETunnels, nil
 }
 
 // DeleteMagicTransitGRETunnel deletes a GRE tunnel.

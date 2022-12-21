@@ -68,8 +68,27 @@ type DeleteMagicTransitStaticRouteResponse struct {
 	} `json:"result"`
 }
 
+// DeleteMagicTransitStaticRouteResponse contains a static route deletion response.
+type DeleteMagicTransitStaticRoutesResponse struct {
+	Response
+	Result struct {
+		Deleted       bool                      `json:"deleted"`
+		DeletedRoutes []MagicTransitStaticRoute `json:"deleted_routes"`
+	} `json:"result"`
+}
+
 // CreateMagicTransitStaticRoutesRequest is an array of static routes to create.
 type CreateMagicTransitStaticRoutesRequest struct {
+	Routes []MagicTransitStaticRoute `json:"routes"`
+}
+
+// UpdateMagicTransitStaticRoutesRequest is an array of static routes updated.
+type UpdateMagicTransitStaticRoutesRequest struct {
+	Routes []MagicTransitStaticRoute `json:"routes"`
+}
+
+// DeleteMagicTransitStaticRoutesRequest is an array of static routes to delete.
+type DeleteMagicTransitStaticRoutesRequest struct {
 	Routes []MagicTransitStaticRoute `json:"routes"`
 }
 
@@ -132,6 +151,27 @@ func (api *API) CreateMagicTransitStaticRoute(ctx context.Context, accountID str
 	return result.Result.Routes, nil
 }
 
+// CreateMagicTransitStaticRoutes creates new static routes
+//
+// API reference: https://api.cloudflare.com/#magic-transit-static-routes-create-routes
+func (api *API) CreateMagicTransitStaticRoutes(ctx context.Context, accountID string, routes []MagicTransitStaticRoute) ([]MagicTransitStaticRoute, error) {
+	uri := fmt.Sprintf("/accounts/%s/magic/routes", accountID)
+	res, err := api.makeRequestContext(ctx, http.MethodPost, uri, CreateMagicTransitStaticRoutesRequest{
+		Routes: routes,
+	})
+
+	if err != nil {
+		return []MagicTransitStaticRoute{}, err
+	}
+
+	result := ListMagicTransitStaticRoutesResponse{}
+	if err := json.Unmarshal(res, &result); err != nil {
+		return []MagicTransitStaticRoute{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
+	}
+
+	return result.Result.Routes, nil
+}
+
 // UpdateMagicTransitStaticRoute updates a static route
 //
 // API reference: https://api.cloudflare.com/#magic-transit-static-routes-update-route
@@ -155,6 +195,27 @@ func (api *API) UpdateMagicTransitStaticRoute(ctx context.Context, accountID, ID
 	return result.Result.ModifiedRoute, nil
 }
 
+// UpdateMagicTransitStaticRoutes updates static routes
+//
+// API reference: https://api.cloudflare.com/#magic-transit-static-routes-update-route
+func (api *API) UpdateMagicTransitStaticRoutes(ctx context.Context, accountID string, routes []MagicTransitStaticRoute) ([]MagicTransitStaticRoute, error) {
+	uri := fmt.Sprintf("/accounts/%s/magic/routes", accountID)
+	res, err := api.makeRequestContext(ctx, http.MethodPut, uri, UpdateMagicTransitStaticRoutesRequest{
+		Routes: routes,
+	})
+
+	if err != nil {
+		return []MagicTransitStaticRoute{}, err
+	}
+
+	result := ListMagicTransitStaticRoutesResponse{}
+	if err := json.Unmarshal(res, &result); err != nil {
+		return []MagicTransitStaticRoute{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
+	}
+
+	return result.Result.Routes, nil
+}
+
 // DeleteMagicTransitStaticRoute deletes a static route
 //
 // API reference: https://api.cloudflare.com/#magic-transit-static-routes-delete-route
@@ -176,4 +237,29 @@ func (api *API) DeleteMagicTransitStaticRoute(ctx context.Context, accountID, ID
 	}
 
 	return result.Result.DeletedRoute, nil
+}
+
+// DeleteMagicTransitStaticRoutes deletes static routes
+//
+// API reference: https://api.cloudflare.com/#magic-static-routes-delete-many-routes
+func (api *API) DeleteMagicTransitStaticRoutes(ctx context.Context, accountID string, routes []MagicTransitStaticRoute) ([]MagicTransitStaticRoute, error) {
+	uri := fmt.Sprintf("/accounts/%s/magic/routes", accountID)
+	res, err := api.makeRequestContext(ctx, http.MethodDelete, uri, DeleteMagicTransitStaticRoutesRequest{
+		Routes: routes,
+	})
+
+	if err != nil {
+		return []MagicTransitStaticRoute{}, err
+	}
+
+	result := DeleteMagicTransitStaticRoutesResponse{}
+	if err := json.Unmarshal(res, &result); err != nil {
+		return []MagicTransitStaticRoute{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
+	}
+
+	if !result.Result.Deleted {
+		return []MagicTransitStaticRoute{}, errors.New(errMagicTransitStaticRouteNotDeleted)
+	}
+
+	return result.Result.DeletedRoutes, nil
 }
